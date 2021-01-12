@@ -1,2 +1,2 @@
-# --Explosion--'s portolio!
-Hi there! This is my new portfolio site! Enjoy!
+# Styxo's portolio!
+Here's a littile info about me!
