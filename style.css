@@ -23,7 +23,7 @@ section {
   position: relative;
   min-height: 100vh;
   background: var(--background);
-  background-image: url("https://styxo.codes/public/bg.png");
+  background-image: url("http://www.styxo.codes/public/bg.png");
   background-size: cover;
   background-position: right;
   background-attachment: fixed;
