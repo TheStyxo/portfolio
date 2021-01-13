@@ -1,0 +1,150 @@
+﻿window.onload = function () {
+    newButton = document.getElementById('new');
+    saveButton = document.getElementById('save');
+    editButton = document.getElementById('edit');
+    cntEv = document.getElementById('content-editable');
+}
+
+document.onload = function () {
+    document.getElementById('new').className = 'disabled';
+    document.getElementById('edit').className = 'disabled';
+}
+
+function reload() {
+    document.location.href = document.location.href.substring(0, document.location.href.length - document.location.pathname.length);
+}
+
+var newButton, saveButton, editButton, cntEv, urlPath;
+
+function newFile() {
+    if (document.getElementById('new').className == 'disabled') return;
+    document.location.href = document.location.href.substring(0, document.location.href.length - document.location.pathname.length);
+
+}
+
+function saveFile() {
+    if (saveButton.className == 'disabled') return;
+    var cnt = document.getElementById('content-editable');
+    if (cnt != null && cnt.value.trim() != '') {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                var response = xhttp.responseText;
+                history.replaceState(null, null , response);
+                document.title = 'hatebin - ' + response;
+            }
+        }
+        xhttp.open('POST', (document.location.href.substring(0, document.location.href.length - document.location.pathname.length) + '/index.php'), true);
+        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        var encoded = encodeURIComponent(cnt.value.substring(0, 50000));
+        xhttp.send('text=' + encoded);
+
+        highlightData();
+        saveButton.className = 'disabled';
+    };
+}
+
+var decoded = '';
+function setDecoded(text) {
+    decoded = text;
+}
+function editFile() {
+    if (document.getElementById('edit').className == 'disabled') return;
+    //time to make edit work
+    var wrp = document.getElementById('wrapper');
+    var code = document.getElementById('content-non-editable');
+    var pre = code.parentElement;
+    var cnt = document.createElement('textarea');
+    cnt.id = 'content-editable';
+    cnt.autofocus = true;
+    cnt.spellcheck = false;
+    cntEv = cnt;
+    cnt.oninput = function () { toggleControls(); }
+    cnt.innerHTML = code.textContent;
+    wrp.replaceChild(cnt, pre);
+    resetLineNumber();
+    editButton.className = 'disabled';
+}
+
+function highlightData() {
+    var path = document.location.href.substring(document.location.origin.length + 1);
+    document.title = 'hatebin - ' + path;
+
+    var cnt = document.getElementById('content-editable');
+    var ln = document.getElementById('lineNumber');
+    ln.removeChild(ln.firstElementChild);
+
+    var wrp = document.getElementById('wrapper');
+    var pre = document.createElement('pre');
+    var code = document.createElement('code');
+    code.id = 'content-non-editable';
+    code.style.whiteSpace = 'pre';
+    pre.appendChild(code);
+    wrp.appendChild(pre);
+
+    var string = cnt.value;
+    wrp.removeChild(cnt);
+    var parsed = string.replace(/</g, '&#60;');
+    parsed = parsed.replace(/>/g, '&#62;');
+    var lineArray = parsed.split('\n');
+    var lineCount = lineArray.length;
+
+    for (var i = 0; i < lineCount; i++) {
+        var sp = document.createElement('span');
+        var lc = document.createTextNode((i + 1).valueOf());
+        sp.appendChild(lc);
+        ln.appendChild(sp);
+        var b = document.createElement('br');
+        ln.appendChild(b);
+    }
+    var fin = lineArray.join('\n');
+    code.innerHTML = fin;
+    hljs.highlightBlock(code);
+    document.getElementById('new').className = 'enabled';
+    document.getElementById('edit').className = 'enabled';
+}
+
+document.addEventListener('keydown', function (e) {
+    if (e.keyCode == 83 && (navigator.platform.match('Mac') ? e.metaKey : e.ctrlKey)) {
+        e.preventDefault();
+        saveFile();
+    } else if (e.keyCode == 69 && (navigator.platform.match('Mac') ? e.metaKey : e.ctrlKey)) {
+        e.preventDefault();
+        editFile();
+    } else if (e.keyCode == 77 && (navigator.platform.match('Mac') ? e.metaKey : e.ctrlKey)) {
+        e.preventDefault();
+        newFile();
+    } else if (e.keyCode === 9) {
+        e.preventDefault();
+        var cnt = document.getElementById('content-editable');
+        var v = cnt.value, s = cnt.selectionStart, e = cnt.selectionEnd;
+        cnt.value = v.substring(0, s) + '\t' + v.substring(e);
+        cnt.selectionStart = cnt.selectionEnd = s + 1;
+        cnt.focus();
+    }
+}, false);
+
+function toggleControls() {
+    if (cntEv != null && cntEv.value.trim() != '') {
+        if (saveButton.className == 'enabled') { }
+        else {
+            saveButton.className = 'enabled';
+        }
+        if (newButton.className == 'disabled') {
+            newButton.className = 'enabled';
+        }
+    } else {
+        saveButton.className = 'disabled';
+        newButton.className = 'disabled';
+    }
+}
+
+function resetLineNumber() {
+    var ln = document.getElementById('lineNumber');
+    while (ln.firstChild) {
+        ln.removeChild(ln.firstChild);
+    }
+    var arrow = document.createElement('span');
+    arrow.innerHTML = '>';
+    ln.appendChild(arrow);
+}
